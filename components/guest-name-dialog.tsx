@@ -1,44 +1,54 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Heart, User } from "lucide-react"
-import { motion } from "framer-motion"
+import type React from "react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Heart, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface GuestNameDialogProps {
-  isOpen: boolean
-  initialName: string
-  onClose: (name: string) => void
+  isOpen: boolean;
+  initialName: string;
+  onClose: (name: string) => void;
 }
 
-export function GuestNameDialog({ isOpen, initialName, onClose }: GuestNameDialogProps) {
-  const [guestName, setGuestName] = useState(initialName || "")
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function GuestNameDialog({
+  isOpen,
+  initialName,
+  onClose,
+}: GuestNameDialogProps) {
+  const [guestName, setGuestName] = useState(initialName || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setIsSubmitting(true)
+    event.preventDefault();
+    setIsSubmitting(true);
     // Simulate a delay to show the loading state
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsSubmitting(false)
-    onClose(guestName.trim() || initialName)
-  }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsSubmitting(false);
+    onClose(guestName.trim() || initialName);
+  };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
-      handleSubmit(event as any)
+      handleSubmit(event as any);
     }
-  }
+  };
 
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose(guestName.trim() || initialName)
+        if (!open) onClose(guestName.trim() || initialName);
       }}
     >
       <DialogContent className="sm:max-w-md bg-white dark:bg-slate-800 border-sage-200 dark:border-sage-700">
@@ -51,10 +61,10 @@ export function GuestNameDialog({ isOpen, initialName, onClose }: GuestNameDialo
           >
             <Heart className="h-8 w-8 text-sage-600 dark:text-sage-400" />
           </motion.div>
-          <DialogTitle className="text-2xl font-serif text-sage-800 dark:text-sage-200">
+          <DialogTitle className="text-2xl font-serif text-sage-800 dark:text-sage-200 text-center">
             {initialName ? "Change Your Name" : "Welcome to Our Wedding!"}
           </DialogTitle>
-          <DialogDescription className="text-sage-600 dark:text-sage-400 mt-2">
+          <DialogDescription className="text-sage-600 dark:text-sage-400 mt-2 text-center">
             {initialName
               ? "Please enter your name for this upload."
               : "Please tell us your name so we can remember who shared these beautiful moments with us."}
@@ -63,7 +73,10 @@ export function GuestNameDialog({ isOpen, initialName, onClose }: GuestNameDialo
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           <div className="space-y-2">
-            <Label htmlFor="guest-name" className="text-sage-700 dark:text-sage-300 font-medium">
+            <Label
+              htmlFor="guest-name"
+              className="text-sage-700 dark:text-sage-300 font-medium"
+            >
               Your Name
             </Label>
             <div className="relative">
@@ -91,7 +104,11 @@ export function GuestNameDialog({ isOpen, initialName, onClose }: GuestNameDialo
               {isSubmitting ? (
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  transition={{
+                    duration: 1,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
                   className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                 />
               ) : (
@@ -106,5 +123,5 @@ export function GuestNameDialog({ isOpen, initialName, onClose }: GuestNameDialo
         </p>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
