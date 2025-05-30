@@ -1,86 +1,100 @@
-"use client"
+"use client";
 
-import { useState, useRef, useCallback, useEffect } from "react"
-import { motion, useInView } from "framer-motion"
-import { Camera, Upload, Loader2, Heart } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import type { UploadedMedia, MediaResponse } from "@/types/wedding"
-import MediaModal from "./media-modal"
-import MasonryGrid from "./masonry-grid"
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
-import { GalleryService } from "@/services/gallery"
-import { weddingConfig } from "@/config/wedding"
+import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, useInView } from "framer-motion";
+import { Camera, Upload, Loader2, Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { UploadedMedia, MediaResponse } from "@/types/wedding";
+import MediaModal from "./media-modal";
+import MasonryGrid from "./masonry-grid";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { GalleryService } from "@/services/gallery";
+import { weddingConfig } from "@/config/wedding";
 
 interface GallerySectionProps {
-  media: UploadedMedia[]
-  onMediaAdded?: (media: UploadedMedia) => void
+  media: UploadedMedia[];
+  onMediaAdded?: (media: UploadedMedia) => void;
 }
 
-export default function GallerySection({ media: uploadedMedia, onMediaAdded }: GallerySectionProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0)
-  const [allMedia, setAllMedia] = useState<UploadedMedia[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const [nextCursor, setNextCursor] = useState<string | undefined>()
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [showEndMessage, setShowEndMessage] = useState(false)
+export default function GallerySection({
+  media: uploadedMedia,
+  onMediaAdded,
+}: GallerySectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [allMedia, setAllMedia] = useState<UploadedMedia[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showEndMessage, setShowEndMessage] = useState(false);
 
-  const sectionRef = useRef(null)
-  const isInView = useInView(sectionRef, { once: false, amount: 0.2 })
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { once: false, amount: 0.1 });
 
-  const galleryService = GalleryService.getInstance()
+  const galleryService = GalleryService.getInstance();
 
   // Load initial media on mount
   useEffect(() => {
     if (!isInitialized) {
-      loadMoreMedia()
-      setIsInitialized(true)
+      loadMoreMedia();
+      setIsInitialized(true);
     }
-  }, [isInitialized])
+  }, [isInitialized]);
 
   // Combine uploaded media with loaded media
   useEffect(() => {
     setAllMedia((prev) => {
-      const existingIds = new Set(prev.map((item) => item.id))
-      const newMedia = uploadedMedia.filter((item) => !existingIds.has(item.id))
-      return [...newMedia, ...prev]
-    })
-  }, [uploadedMedia])
+      const existingIds = new Set(prev.map((item) => item.id));
+      const newMedia = uploadedMedia.filter(
+        (item) => !existingIds.has(item.id)
+      );
+      return [...newMedia, ...prev];
+    });
+  }, [uploadedMedia]);
 
   const loadMoreMedia = useCallback(async () => {
-    if (isLoading || !hasMore) return
+    if (isLoading || !hasMore) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response: MediaResponse = await galleryService.getMedia(nextCursor, 20)
+      const response: MediaResponse = await galleryService.getMedia(
+        nextCursor,
+        20
+      );
 
       setAllMedia((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id))
-        const newMedia = response.media.filter((item) => !existingIds.has(item.id))
-        return [...prev, ...newMedia]
-      })
+        const existingIds = new Set(prev.map((item) => item.id));
+        const newMedia = response.media.filter(
+          (item) => !existingIds.has(item.id)
+        );
+        return [...prev, ...newMedia];
+      });
 
-      setNextCursor(response.nextCursor)
-      setHasMore(response.hasMore)
-      
+      setNextCursor(response.nextCursor);
+      setHasMore(response.hasMore);
+
       // Show end message if no more content
-      if (!response.hasMore && response.media.length === 0 && allMedia.length > 0) {
-        setShowEndMessage(true)
+      if (
+        !response.hasMore &&
+        response.media.length === 0 &&
+        allMedia.length > 0
+      ) {
+        setShowEndMessage(true);
       }
     } catch (error) {
-      console.error("Failed to load media:", error)
+      console.error("Failed to load media:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [nextCursor, isLoading, hasMore, galleryService, allMedia.length])
+  }, [nextCursor, isLoading, hasMore, galleryService, allMedia.length]);
 
   useInfiniteScroll({
     hasMore,
     isLoading,
     onLoadMore: loadMoreMedia,
     threshold: 200,
-  })
+  });
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -91,7 +105,7 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
         delayChildren: 0.1,
       },
     },
-  }
+  };
 
   const headerVariants = {
     hidden: { opacity: 0, y: 30 },
@@ -100,26 +114,26 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
       y: 0,
       transition: { duration: 0.6, ease: "easeOut" },
     },
-  }
+  };
 
   const openModal = (index: number) => {
-    setCurrentMediaIndex(index)
-    setIsModalOpen(true)
-  }
+    setCurrentMediaIndex(index);
+    setIsModalOpen(true);
+  };
 
   const closeModal = () => {
-    setIsModalOpen(false)
-  }
+    setIsModalOpen(false);
+  };
 
   const navigateToMedia = (index: number) => {
-    setCurrentMediaIndex(index)
-  }
+    setCurrentMediaIndex(index);
+  };
 
   const scrollToUpload = () => {
     document.getElementById("upload-section")?.scrollIntoView({
       behavior: "smooth",
-    })
-  }
+    });
+  };
 
   if (allMedia.length === 0 && !isLoading) {
     return (
@@ -158,7 +172,7 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
           </motion.div>
         </motion.div>
       </section>
-    )
+    );
   }
 
   return (
@@ -178,13 +192,18 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
             {weddingConfig.content.galleryTitle}
           </h2>
           <p className="text-sage-600 dark:text-sage-400 text-lg transition-colors duration-300">
-            {allMedia.length} beautiful {allMedia.length === 1 ? "memory" : "memories"} shared
+            {allMedia.length} beautiful{" "}
+            {allMedia.length === 1 ? "memory" : "memories"} shared
           </p>
         </motion.div>
 
         {/* Masonry Grid Container */}
         <div className="w-full overflow-hidden">
-          <MasonryGrid media={allMedia} onMediaClick={openModal} isLoading={isLoading} />
+          <MasonryGrid
+            media={allMedia}
+            onMediaClick={openModal}
+            isLoading={isLoading}
+          />
         </div>
 
         {/* Load more indicator */}
@@ -197,7 +216,9 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
           >
             <div className="flex items-center gap-3 text-sage-600 dark:text-sage-400">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span className="text-sm font-medium">Loading more memories...</span>
+              <span className="text-sm font-medium">
+                Loading more memories...
+              </span>
             </div>
           </motion.div>
         )}
@@ -215,9 +236,6 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
               <p className="text-sage-600 dark:text-sage-400 text-lg font-medium">
                 You've seen all the beautiful memories! 💕
               </p>
-              <p className="text-sage-500 dark:text-sage-400 text-sm">
-                Thank you for sharing these special moments with us
-              </p>
             </div>
           </motion.div>
         )}
@@ -232,5 +250,5 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
         onNavigate={navigateToMedia}
       />
     </section>
-  )
+  );
 }
