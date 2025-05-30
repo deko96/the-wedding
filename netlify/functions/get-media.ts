@@ -17,6 +17,7 @@ export const handler: Handler = async (event) => {
 
   if (event.httpMethod === "OPTIONS")
     return { statusCode: 200, headers, body: "" };
+
   if (event.httpMethod !== "GET")
     return {
       statusCode: 405,
@@ -26,6 +27,8 @@ export const handler: Handler = async (event) => {
 
   try {
     const { cursor, limit = "20" } = event.queryStringParameters || {};
+
+    // Filtered scan for paginated results
     const scanParams: any = {
       TableName: MEDIA_TABLE,
       FilterExpression: "#status = :status",
@@ -33,6 +36,7 @@ export const handler: Handler = async (event) => {
       ExpressionAttributeValues: { ":status": { S: "completed" } },
       Limit: parseInt(limit),
     };
+
     if (cursor) {
       scanParams.ExclusiveStartKey = JSON.parse(
         Buffer.from(cursor, "base64").toString()
@@ -40,6 +44,14 @@ export const handler: Handler = async (event) => {
     }
 
     const result = await dynamo.send(new ScanCommand(scanParams));
+
+    // Full scan for total item count (unfiltered)
+    const totalCountResult = await dynamo.send(
+      new ScanCommand({
+        TableName: MEDIA_TABLE,
+        Select: "COUNT",
+      })
+    );
 
     const media = await Promise.all(
       (result.Items || []).map(async (item: Record<string, AttributeValue>) => {
@@ -78,7 +90,7 @@ export const handler: Handler = async (event) => {
             )
           : undefined,
         hasMore: !!result.LastEvaluatedKey,
-        total: result.Count || 0,
+        total: totalCountResult.Count || 0,
       }),
     };
   } catch (error) {
