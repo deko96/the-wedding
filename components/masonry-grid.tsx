@@ -1,93 +1,103 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Play } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import type { UploadedMedia } from "@/types/wedding"
-import Image from "next/image"
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Heart, Calendar, User } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UploadedMedia } from "@/types/wedding";
+import Image from "next/image";
 
 interface MasonryGridProps {
-  media: UploadedMedia[]
-  onMediaClick: (index: number) => void
-  isLoading?: boolean
+  media: UploadedMedia[];
+  onMediaClick: (index: number) => void;
+  isLoading?: boolean;
 }
 
 interface MasonryItem extends UploadedMedia {
-  height: number
-  column: number
-  top: number
+  height: number;
+  column: number;
+  top: number;
 }
 
-export default function MasonryGrid({ media, onMediaClick, isLoading = false }: MasonryGridProps) {
-  const [masonryItems, setMasonryItems] = useState<MasonryItem[]>([])
-  const [columns, setColumns] = useState(4)
-  const [columnHeights, setColumnHeights] = useState<number[]>([])
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [containerWidth, setContainerWidth] = useState(0)
+export default function MasonryGrid({
+  media,
+  onMediaClick,
+  isLoading = false,
+}: MasonryGridProps) {
+  const [masonryItems, setMasonryItems] = useState<MasonryItem[]>([]);
+  const [columns, setColumns] = useState(4);
+  const [columnHeights, setColumnHeights] = useState<number[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Calculate number of columns based on screen width
   const calculateColumns = useCallback(() => {
-    if (!containerRef.current) return 4
+    if (!containerRef.current) return 4;
 
-    const width = containerRef.current.offsetWidth
-    if (width < 640) return 2
-    if (width < 768) return 3
-    if (width < 1024) return 4
-    if (width < 1280) return 5
-    return 6
-  }, [])
+    const width = containerRef.current.offsetWidth;
+    if (width < 640) return 2;
+    if (width < 768) return 3;
+    if (width < 1024) return 4;
+    if (width < 1280) return 5;
+    return 6;
+  }, []);
 
   // Update container width and columns on resize
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth)
-        setColumns(calculateColumns())
+        setContainerWidth(containerRef.current.offsetWidth);
+        setColumns(calculateColumns());
       }
-    }
+    };
 
-    updateDimensions()
-    window.addEventListener("resize", updateDimensions)
-    return () => window.removeEventListener("resize", updateDimensions)
-  }, [calculateColumns])
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, [calculateColumns]);
 
   // Initialize column heights
   useEffect(() => {
-    setColumnHeights(new Array(columns).fill(0))
-  }, [columns])
+    setColumnHeights(new Array(columns).fill(0));
+  }, [columns]);
 
   // Calculate masonry layout
   useEffect(() => {
-    if (!media.length || !containerWidth || !columnHeights.length) return
+    if (!media.length || !containerWidth || !columnHeights.length) return;
 
-    const gap = 16
-    const columnWidth = Math.max(0, (containerWidth - gap * (columns - 1)) / columns)
-    const newColumnHeights = new Array(columns).fill(0)
+    const gap = 16;
+    const columnWidth = Math.max(
+      0,
+      (containerWidth - gap * (columns - 1)) / columns
+    );
+    const newColumnHeights = new Array(columns).fill(0);
 
     const items: MasonryItem[] = media.map((item, index) => {
       // Calculate aspect ratio and height
-      const aspectRatio = item.type === "video" ? 16 / 9 : Math.random() * 0.5 + 0.7 // Random height for demo
-      const height = Math.max(200, columnWidth / aspectRatio) // Minimum height of 200px
+      const aspectRatio =
+        item.type === "video" ? 16 / 9 : Math.random() * 0.5 + 0.7; // Random height for demo
+      const height = Math.max(200, columnWidth / aspectRatio); // Minimum height of 200px
 
       // Find shortest column
-      const shortestColumnIndex = newColumnHeights.indexOf(Math.min(...newColumnHeights))
-      const top = newColumnHeights[shortestColumnIndex]
+      const shortestColumnIndex = newColumnHeights.indexOf(
+        Math.min(...newColumnHeights)
+      );
+      const top = newColumnHeights[shortestColumnIndex];
 
       // Update column height
-      newColumnHeights[shortestColumnIndex] += height + gap
+      newColumnHeights[shortestColumnIndex] += height + gap;
 
       return {
         ...item,
         height,
         column: shortestColumnIndex,
         top,
-      }
-    })
+      };
+    });
 
-    setMasonryItems(items)
-    setColumnHeights(newColumnHeights)
-  }, [media, containerWidth, columns])
+    setMasonryItems(items);
+    setColumnHeights(newColumnHeights);
+  }, [media, containerWidth, columns]);
 
   const itemVariants = {
     hidden: { opacity: 0, scale: 0.8, y: 20 },
@@ -106,14 +116,31 @@ export default function MasonryGrid({ media, onMediaClick, isLoading = false }: 
       scale: 0.8,
       transition: { duration: 0.3 },
     },
-  }
+  };
 
-  const gap = 16
-  const columnWidth = containerWidth ? Math.max(0, (containerWidth - gap * (columns - 1)) / columns) : 0
+  const gap = 16;
+  const columnWidth = containerWidth
+    ? Math.max(0, (containerWidth - gap * (columns - 1)) / columns)
+    : 0;
 
   // Calculate container height safely, avoiding Infinity
-  const maxColumnHeight = columnHeights.length > 0 ? Math.max(...columnHeights.filter((h) => isFinite(h))) : 0
-  const containerHeight = Math.max(0, maxColumnHeight || 0)
+  const maxColumnHeight =
+    columnHeights.length > 0
+      ? Math.max(...columnHeights.filter((h) => isFinite(h)))
+      : 0;
+  const containerHeight = Math.max(0, maxColumnHeight || 0);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  console.log(masonryItems);
 
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
@@ -126,11 +153,16 @@ export default function MasonryGrid({ media, onMediaClick, isLoading = false }: 
       >
         <AnimatePresence>
           {masonryItems.map((item, index) => {
-            const leftPosition = item.column * (columnWidth + gap)
+            const leftPosition = item.column * (columnWidth + gap);
 
             // Ensure positions are valid numbers
-            if (!isFinite(leftPosition) || !isFinite(item.top) || !isFinite(columnWidth) || !isFinite(item.height)) {
-              return null
+            if (
+              !isFinite(leftPosition) ||
+              !isFinite(item.top) ||
+              !isFinite(columnWidth) ||
+              !isFinite(item.height)
+            ) {
+              return null;
             }
 
             return (
@@ -166,7 +198,11 @@ export default function MasonryGrid({ media, onMediaClick, isLoading = false }: 
                         />
                       ) : (
                         <div className="relative w-full h-full bg-sage-100 dark:bg-sage-800">
-                          <video src={item.url} className="w-full h-full object-cover" muted />
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover"
+                            muted
+                          />
                           <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                             <div className="bg-white/90 dark:bg-slate-800/90 rounded-full p-4 shadow-lg">
                               <Play className="h-8 w-8 text-sage-700 dark:text-sage-300" />
@@ -175,29 +211,42 @@ export default function MasonryGrid({ media, onMediaClick, isLoading = false }: 
                         </div>
                       )}
 
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4">
-                        <div className="bg-white/90 dark:bg-slate-800/90 rounded-full p-2 shadow-lg">
-                          <svg
-                            className="h-6 w-6 text-sage-700 dark:text-sage-300"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                      {/* Hover overlay with guest info */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-4">
+                        {/* Top: View icon */}
+                        <div className="flex justify-center">
+                          <motion.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            whileHover={{ scale: 1, rotate: 0 }}
+                            className="bg-white/90 dark:bg-slate-800/90 rounded-full p-3 shadow-lg"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                            />
-                          </svg>
+                            <Heart className="h-6 w-6 text-red-500 fill-current" />
+                          </motion.div>
+                        </div>
+
+                        {/* Bottom: Guest info */}
+                        <div className="space-y-2">
+                          {item.guestName && (
+                            <div className="flex items-center gap-2 text-white">
+                              <User className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {item.guestName}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 text-white/80">
+                            <Calendar className="h-4 w-4" />
+                            <span className="text-xs">
+                              {formatDate(item.uploadedAt)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
-            )
+            );
           })}
         </AnimatePresence>
       </div>
@@ -225,5 +274,5 @@ export default function MasonryGrid({ media, onMediaClick, isLoading = false }: 
         </div>
       )}
     </div>
-  )
+  );
 }

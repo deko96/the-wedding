@@ -20,7 +20,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: getPageTitle(),
   description: getPageDescription(),
-    generator: 'v0.dev'
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 }
 
 export default function RootLayout({

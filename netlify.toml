@@ -1,0 +1,25 @@
+[build]
+  command = "pnpm build"
+  publish = ".next"
+  functions = "netlify/functions"
+
+[dev]
+  command = "pnpm dev"
+  port = 8888
+  targetPort = 3000
+  framework = "next"
+  autoLaunch = true
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

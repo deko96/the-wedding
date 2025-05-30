@@ -1,9 +1,7 @@
 import type { UploadedMedia, MediaResponse, S3UploadResponse } from "@/types/wedding"
 
-// Mock S3 service - replace with actual S3 implementation
 export class S3Service {
   private static instance: S3Service
-  private mockMedia: UploadedMedia[] = []
 
   static getInstance(): S3Service {
     if (!S3Service.instance) {
@@ -12,77 +10,84 @@ export class S3Service {
     return S3Service.instance
   }
 
-  // Get pre-signed URL for upload
-  async getUploadUrl(fileName: string, fileType: string): Promise<S3UploadResponse> {
-    // Mock implementation - replace with actual S3 pre-signed URL generation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    return {
-      uploadUrl: `https://mock-bucket.s3.amazonaws.com/uploads/${Date.now()}-${fileName}`,
-      key: `uploads/${Date.now()}-${fileName}`,
-      fields: {
-        "Content-Type": fileType,
-        "x-amz-meta-uploaded-by": "wedding-gallery",
+  // Get pre-signed URL for upload via Netlify function
+  async getUploadUrl(
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+    guestName: string,
+  ): Promise<S3UploadResponse & { mediaId: string }> {
+    const response = await fetch("/.netlify/functions/get-upload-url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        fileName,
+        fileType,
+        fileSize,
+        guestName,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to get upload URL")
     }
+
+    return response.json()
   }
 
   // Upload file to S3 using pre-signed URL
-  async uploadFile(file: File, uploadData: S3UploadResponse): Promise<UploadedMedia> {
-    // Mock upload - replace with actual S3 upload
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+  async uploadFile(file: File, uploadData: S3UploadResponse & { mediaId: string }): Promise<UploadedMedia> {
+    // Upload to S3
+    const uploadResponse = await fetch(uploadData.uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type,
+      },
+    })
+
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload file to S3")
+    }
+
+    // Mark upload as completed
+    await fetch("/.netlify/functions/complete-upload", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        mediaId: uploadData.mediaId,
+      }),
+    })
 
     const media: UploadedMedia = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: uploadData.mediaId,
       type: file.type.startsWith("video/") ? "video" : "image",
-      url: URL.createObjectURL(file), // In real implementation, this would be the S3 URL
+      url: URL.createObjectURL(file), // Temporary URL for immediate preview
       name: file.name,
       uploadedAt: new Date(),
       s3Key: uploadData.key,
       size: file.size,
     }
 
-    this.mockMedia.push(media)
     return media
   }
 
-  // Get paginated media list
+  // Get paginated media list from Netlify function
   async getMedia(cursor?: string, limit = 20): Promise<MediaResponse> {
-    // Mock implementation - replace with actual S3 listing
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    const params = new URLSearchParams()
+    if (cursor) params.append("cursor", cursor)
+    params.append("limit", limit.toString())
 
-    const startIndex = cursor ? Number.parseInt(cursor) : 0
-    const endIndex = startIndex + limit
-    const paginatedMedia = this.mockMedia.slice(startIndex, endIndex)
+    const response = await fetch(`/.netlify/functions/get-media?${params}`)
 
-    return {
-      media: paginatedMedia,
-      nextCursor: endIndex < this.mockMedia.length ? endIndex.toString() : undefined,
-      hasMore: endIndex < this.mockMedia.length,
-      total: this.mockMedia.length,
+    if (!response.ok) {
+      throw new Error("Failed to fetch media")
     }
-  }
 
-  // Generate additional mock data for testing infinite scroll
-  generateMockData(count = 50) {
-    const mockImages = [
-      "/placeholder.svg?height=400&width=300",
-      "/placeholder.svg?height=500&width=300",
-      "/placeholder.svg?height=350&width=300",
-      "/placeholder.svg?height=450&width=300",
-      "/placeholder.svg?height=380&width=300",
-    ]
-
-    for (let i = 0; i < count; i++) {
-      this.mockMedia.push({
-        id: `mock-${i}`,
-        type: Math.random() > 0.8 ? "video" : "image",
-        url: mockImages[i % mockImages.length],
-        name: `Mock Photo ${i + 1}.jpg`,
-        uploadedAt: new Date(Date.now() - Math.random() * 86400000 * 30), // Random date within last 30 days
-        s3Key: `mock/photo-${i}.jpg`,
-        size: Math.floor(Math.random() * 5000000) + 1000000, // 1-6MB
-      })
-    }
+    return response.json()
   }
 }

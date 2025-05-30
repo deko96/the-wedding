@@ -2,13 +2,13 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import { motion, useInView } from "framer-motion"
-import { Camera, Upload, Loader2 } from "lucide-react"
+import { Camera, Upload, Loader2, Heart } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import type { UploadedMedia, MediaResponse } from "@/types/wedding"
 import MediaModal from "./media-modal"
 import MasonryGrid from "./masonry-grid"
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
-import { S3Service } from "@/services/s3-service"
+import { GalleryService } from "@/services/gallery"
 import { weddingConfig } from "@/config/wedding"
 
 interface GallerySectionProps {
@@ -24,16 +24,16 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
   const [hasMore, setHasMore] = useState(true)
   const [nextCursor, setNextCursor] = useState<string | undefined>()
   const [isInitialized, setIsInitialized] = useState(false)
+  const [showEndMessage, setShowEndMessage] = useState(false)
 
   const sectionRef = useRef(null)
   const isInView = useInView(sectionRef, { once: false, amount: 0.2 })
 
-  const s3Service = S3Service.getInstance()
+  const galleryService = GalleryService.getInstance()
 
-  // Initialize with mock data for demo
+  // Load initial media on mount
   useEffect(() => {
     if (!isInitialized) {
-      s3Service.generateMockData(50) // Generate 50 mock images for demo
       loadMoreMedia()
       setIsInitialized(true)
     }
@@ -49,11 +49,11 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
   }, [uploadedMedia])
 
   const loadMoreMedia = useCallback(async () => {
-    if (isLoading) return
+    if (isLoading || !hasMore) return
 
     setIsLoading(true)
     try {
-      const response: MediaResponse = await s3Service.getMedia(nextCursor, 20)
+      const response: MediaResponse = await galleryService.getMedia(nextCursor, 20)
 
       setAllMedia((prev) => {
         const existingIds = new Set(prev.map((item) => item.id))
@@ -63,12 +63,17 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
 
       setNextCursor(response.nextCursor)
       setHasMore(response.hasMore)
+      
+      // Show end message if no more content
+      if (!response.hasMore && response.media.length === 0 && allMedia.length > 0) {
+        setShowEndMessage(true)
+      }
     } catch (error) {
       console.error("Failed to load media:", error)
     } finally {
       setIsLoading(false)
     }
-  }, [nextCursor, isLoading, s3Service])
+  }, [nextCursor, isLoading, hasMore, galleryService, allMedia.length])
 
   useInfiniteScroll({
     hasMore,
@@ -90,7 +95,11 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
 
   const headerVariants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
   }
 
   const openModal = (index: number) => {
@@ -179,7 +188,7 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
         </div>
 
         {/* Load more indicator */}
-        {isLoading && (
+        {isLoading && hasMore && (
           <motion.div
             className="flex justify-center items-center py-8"
             initial={{ opacity: 0 }}
@@ -201,7 +210,15 @@ export default function GallerySection({ media: uploadedMedia, onMediaAdded }: G
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="text-sage-500 dark:text-sage-400 text-sm">You've seen all the beautiful memories! 💕</p>
+            <div className="flex flex-col items-center gap-3">
+              <Heart className="h-8 w-8 text-sage-400 dark:text-sage-500" />
+              <p className="text-sage-600 dark:text-sage-400 text-lg font-medium">
+                You've seen all the beautiful memories! 💕
+              </p>
+              <p className="text-sage-500 dark:text-sage-400 text-sm">
+                Thank you for sharing these special moments with us
+              </p>
+            </div>
           </motion.div>
         )}
       </motion.div>
