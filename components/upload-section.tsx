@@ -1,39 +1,48 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useCallback, useRef, useEffect } from "react"
-import { motion, useInView } from "framer-motion"
-import { Upload, ImageIcon, Video, Check, AlertCircle, Pencil, RefreshCw, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import type { UploadedMedia } from "@/types/wedding"
-import { useToast } from "@/hooks/use-toast"
-import { weddingConfig } from "@/config/wedding"
-import { GuestNameDialog } from "./guest-name-dialog"
-import { getUploadUrl } from "@/services/gallery"
+import type React from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { motion, useInView } from "framer-motion";
+import {
+  Upload,
+  ImageIcon,
+  Video,
+  Check,
+  AlertCircle,
+  Pencil,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UploadedMedia } from "@/types/wedding";
+import { useToast } from "@/hooks/use-toast";
+import { weddingConfig } from "@/config/wedding";
+import { GuestNameDialog } from "./guest-name-dialog";
+import { getUploadUrl } from "@/services/gallery";
 
 interface UploadSectionProps {
-  onMediaUploaded: (media: UploadedMedia) => void
+  onMediaUploaded: (media: UploadedMedia) => void;
 }
 
 export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [guestName, setGuestName] = useState("")
-  const [showGuestDialog, setShowGuestDialog] = useState(false)
-  const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const { toast } = useToast()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const sectionRef = useRef(null)
-  const isInView = useInView(sectionRef, { once: false, amount: 0.3 })
+  const sectionRef = useRef(null);
+  const isInView = useInView(sectionRef, { once: false, amount: 0.3 });
 
   // Load guest name from localStorage on mount
   useEffect(() => {
-    const savedGuestName = localStorage.getItem("wedding-guest-name")
+    const savedGuestName = localStorage.getItem("wedding-guest-name");
     if (savedGuestName) {
-      setGuestName(savedGuestName)
+      setGuestName(savedGuestName);
     }
-  }, [])
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -44,7 +53,7 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
         delayChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 40 },
@@ -53,26 +62,26 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
       y: 0,
       transition: { duration: 0.6, ease: "easeOut" },
     },
-  }
+  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
 
   const handleClick = useCallback(() => {
-    fileInputRef.current?.click()
-  }, [])
+    fileInputRef.current?.click();
+  }, []);
 
   // Replace the uploadMedia function with this improved version that catches errors at every step
   const uploadMedia = useCallback(
     async (files: File[], guestName: string) => {
-      if (files.length === 0) return
+      if (files.length === 0) return;
 
       // Create a single toast for the entire batch
       const uploadingToast = toast({
@@ -80,19 +89,20 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
             <span>
-              Preparing to upload {files.length} {files.length === 1 ? "item" : "items"}
+              Preparing to upload {files.length}{" "}
+              {files.length === 1 ? "item" : "items"}
             </span>
           </div>
         ),
         duration: 0, // Don't auto-dismiss
-      })
+      });
 
-      let successCount = 0
-      const failedFiles: File[] = []
-      let currentFileIndex = 0
+      let successCount = 0;
+      const failedFiles: File[] = [];
+      let currentFileIndex = 0;
 
       for (const file of files) {
-        currentFileIndex++
+        currentFileIndex++;
 
         // Update the toast with current progress
         uploadingToast.update({
@@ -104,11 +114,16 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
               </span>
             </div>
           ),
-        })
+        });
 
         try {
           // Get upload URL
-          const uploadData = await getUploadUrl(file.name, file.type, file.size, guestName)
+          const uploadData = await getUploadUrl(
+            file.name,
+            file.type,
+            file.size,
+            guestName
+          );
 
           // Upload to S3
           const uploadResponse = await fetch(uploadData.uploadUrl, {
@@ -117,25 +132,25 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
               "Content-Type": file.type,
             },
             body: file,
-          })
+          });
 
           if (!uploadResponse.ok) {
-            throw new Error("Failed to upload file")
+            throw new Error("Failed to upload file");
           }
 
           // Call complete-upload endpoint
-          const completeResponse = await fetch("/.netlify/functions/complete-upload", {
-            method: "POST",
+          const completeResponse = await fetch("/.netlify/functions/media", {
+            method: "PATCH",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
               mediaId: uploadData.mediaId,
             }),
-          })
+          });
 
           if (!completeResponse.ok) {
-            throw new Error("Failed to complete upload")
+            throw new Error("Failed to complete upload");
           }
 
           // Create media object
@@ -147,26 +162,26 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
             uploadedAt: new Date(),
             guestName: guestName,
             size: file.size,
-          }
+          };
 
           // Notify parent component
-          onMediaUploaded(media)
-          successCount++
+          onMediaUploaded(media);
+          successCount++;
         } catch (error) {
-          console.error(`Upload failed for ${file.name}:`, error)
-          failedFiles.push(file)
+          console.error(`Upload failed for ${file.name}:`, error);
+          failedFiles.push(file);
         }
       }
 
       // Dismiss the uploading toast
-      uploadingToast.dismiss()
+      uploadingToast.dismiss();
 
       // Show final result toast - ALWAYS show the error toast if any files failed
       if (failedFiles.length > 0) {
         // Some uploads failed - show warning toast with retry option
         const retryFailedUploads = () => {
-          uploadMedia(failedFiles, guestName)
-        }
+          uploadMedia(failedFiles, guestName);
+        };
 
         toast({
           title: (
@@ -176,10 +191,12 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
                 <span>
                   {successCount > 0 ? (
                     <>
-                      Successfully uploaded {successCount} {successCount === 1 ? "item" : "items"}.<br />
+                      Successfully uploaded {successCount}{" "}
+                      {successCount === 1 ? "item" : "items"}.<br />
                     </>
                   ) : null}
-                  Failed to upload {failedFiles.length} {failedFiles.length === 1 ? "item" : "items"}.
+                  Failed to upload {failedFiles.length}{" "}
+                  {failedFiles.length === 1 ? "item" : "items"}.
                 </span>
               </div>
             </div>
@@ -197,7 +214,7 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
           ),
           duration: 0, // Don't auto-dismiss error toasts
           variant: "destructive",
-        })
+        });
       } else {
         // All uploads successful
         toast({
@@ -205,74 +222,78 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-green-500" />
               <span>
-                Successfully uploaded {successCount} {successCount === 1 ? "item" : "items"}
+                Successfully uploaded {successCount}{" "}
+                {successCount === 1 ? "item" : "items"}
               </span>
             </div>
           ),
           duration: 3000,
-        })
+        });
       }
     },
-    [onMediaUploaded, toast],
-  )
+    [onMediaUploaded, toast]
+  );
 
   // Replace the processFiles function with this updated version
   const processFiles = useCallback(
     (files: File[]) => {
-      const validFiles = files.filter((file) => file.type.startsWith("image/") || file.type.startsWith("video/"))
+      const validFiles = files.filter(
+        (file) =>
+          file.type.startsWith("image/") || file.type.startsWith("video/")
+      );
 
-      if (validFiles.length === 0) return
+      if (validFiles.length === 0) return;
 
       if (!guestName) {
-        setPendingFiles(validFiles)
-        setShowGuestDialog(true)
+        setPendingFiles(validFiles);
+        setShowGuestDialog(true);
       } else {
-        uploadMedia(validFiles, guestName)
+        uploadMedia(validFiles, guestName);
       }
     },
-    [guestName, uploadMedia],
-  )
+    [guestName, uploadMedia]
+  );
 
   // Update the handleGuestNameSubmit function
   const handleGuestNameSubmit = useCallback(
     (name: string) => {
-      if (!name) return setShowGuestDialog(false)
+      if (!name) return setShowGuestDialog(false);
 
-      setGuestName(name)
-      localStorage.setItem("wedding-guest-name", name)
-      setShowGuestDialog(false)
+      setGuestName(name);
+      localStorage.setItem("wedding-guest-name", name);
+      setShowGuestDialog(false);
 
       // Process pending files
       if (pendingFiles.length > 0) {
-        uploadMedia(pendingFiles, name)
-        setPendingFiles([])
+        uploadMedia(pendingFiles, name);
+        setPendingFiles([]);
       }
     },
-    [pendingFiles, uploadMedia],
-  )
+    [pendingFiles, uploadMedia]
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragOver(false)
+      e.preventDefault();
+      setIsDragOver(false);
 
-      const files = Array.from(e.dataTransfer.files)
-      processFiles(files)
+      const files = Array.from(e.dataTransfer.files);
+      processFiles(files);
     },
-    [processFiles],
-  )
+    [processFiles]
+  );
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || [])
-      processFiles(files)
+      const files = Array.from(e.target.files || []);
+      processFiles(files);
     },
-    [processFiles],
-  )
+    [processFiles]
+  );
 
   const openGuestDialog = () => {
-    setShowGuestDialog(true)
-  }
+    setShowGuestDialog(true);
+  };
 
   return (
     <>
@@ -297,7 +318,10 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
             {guestName && (
               <div className="flex items-center justify-center gap-2 mt-4">
                 <p className="text-sage-500 dark:text-sage-400 text-sm">
-                  Uploading as: <span className="font-medium text-sage-700 dark:text-sage-300">{guestName}</span>
+                  Uploading as:{" "}
+                  <span className="font-medium text-sage-700 dark:text-sage-300">
+                    {guestName}
+                  </span>
                 </p>
                 <Button
                   variant="ghost"
@@ -334,7 +358,10 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
                     className="hidden"
                   />
 
-                  <motion.div animate={{ scale: isDragOver ? 1.1 : 1 }} transition={{ duration: 0.2 }}>
+                  <motion.div
+                    animate={{ scale: isDragOver ? 1.1 : 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Upload className="mx-auto h-12 w-12 text-sage-400 dark:text-sage-500 mb-4 transition-colors duration-300" />
                     <h3 className="text-xl font-medium text-sage-700 dark:text-sage-300 mb-2 transition-colors duration-300">
                       Drop your files here
@@ -361,7 +388,11 @@ export default function UploadSection({ onMediaUploaded }: UploadSectionProps) {
       </section>
 
       {/* Guest Name Dialog */}
-      <GuestNameDialog isOpen={showGuestDialog} onClose={handleGuestNameSubmit} initialName={guestName} />
+      <GuestNameDialog
+        isOpen={showGuestDialog}
+        onClose={handleGuestNameSubmit}
+        initialName={guestName}
+      />
     </>
-  )
+  );
 }
