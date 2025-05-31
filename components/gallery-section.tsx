@@ -48,17 +48,7 @@ export default function GallerySection({
   }, [isInitialized]);
 
   useEffect(() => {
-    setGallery((prev) => {
-      const existingIds = new Set(prev.media.map((item) => item.id));
-      const newMedia = uploadedMedia.filter(
-        (item) => !existingIds.has(item.id)
-      );
-      return {
-        ...prev,
-        media: [...newMedia, ...prev.media],
-        total: prev.total + newMedia.length,
-      };
-    });
+    loadMoreMedia();
   }, [uploadedMedia]);
 
   const loadMoreMedia = useCallback(async () => {
