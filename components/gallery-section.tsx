@@ -56,12 +56,13 @@ export default function GallerySection({
       return {
         ...prev,
         media: [...newMedia, ...prev.media],
+        total: prev.total + newMedia.length,
       };
     });
   }, [uploadedMedia]);
 
   const loadMoreMedia = useCallback(async () => {
-    if (isLoading || !gallery.hasMore) return;
+    if (isLoading) return;
 
     setIsLoading(true);
     try {
