@@ -77,8 +77,6 @@ export const handler: Handler = async (event) => {
       })
     );
 
-    media.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
-
     return {
       statusCode: 200,
       headers,

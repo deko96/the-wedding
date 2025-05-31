@@ -1,30 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { useTheme } from "next-themes"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 
 export default function ThemeToggle() {
-  const [mounted, setMounted] = useState(false)
-  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false);
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   if (!mounted) {
-    return null
+    return null;
   }
 
-  const isDark = theme === "dark"
+  const isDark = resolvedTheme === "dark";
 
   const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark")
-  }
+    setTheme(isDark ? "light" : "dark");
+  };
 
   return (
     <div className="fixed top-6 right-6 z-50">
-      <motion.div className="relative" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+      <motion.div
+        className="relative"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
         {/* Switch Container */}
         <motion.div
           className={`relative w-16 h-8 rounded-full cursor-pointer transition-colors duration-300 ${
@@ -52,7 +56,10 @@ export default function ThemeToggle() {
               <motion.div
                 className="absolute inset-0 rounded-full bg-yellow-300"
                 animate={{
-                  boxShadow: ["0 0 0 0 rgba(253, 224, 71, 0.4)", "0 0 0 8px rgba(253, 224, 71, 0)"],
+                  boxShadow: [
+                    "0 0 0 0 rgba(253, 224, 71, 0.4)",
+                    "0 0 0 8px rgba(253, 224, 71, 0)",
+                  ],
                 }}
                 transition={{
                   duration: 1.5,
@@ -109,5 +116,5 @@ export default function ThemeToggle() {
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

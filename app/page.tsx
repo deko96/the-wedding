@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import HeroSection from "@/components/hero-section"
-import UploadSection from "@/components/upload-section"
-import GallerySection from "@/components/gallery-section"
-import ThemeToggle from "@/components/theme-toggle"
-import FooterSection from "@/components/footer-section"
-import type { UploadedMedia } from "@/types/wedding"
-import { Toaster } from "@/components/ui/toaster"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import HeroSection from "@/components/hero-section";
+import UploadSection from "@/components/upload-section";
+import GallerySection from "@/components/gallery-section";
+import ThemeToggle from "@/components/theme-toggle";
+import FooterSection from "@/components/footer-section";
+import type { UploadedMedia } from "@/types/wedding";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function WeddingGallery() {
-  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([])
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([]);
 
   const handleMediaUploaded = (media: UploadedMedia) => {
-    setUploadedMedia((prev) => [...prev, media])
-  }
+    setUploadedMedia((prev) => [...prev, media]);
+  };
 
   return (
     <motion.div
@@ -32,5 +32,5 @@ export default function WeddingGallery() {
       {/* Toast notifications */}
       <Toaster />
     </motion.div>
-  )
+  );
 }

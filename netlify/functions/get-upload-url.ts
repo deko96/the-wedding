@@ -1,7 +1,11 @@
 import type { Handler } from "@netlify/functions";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { PutItemCommand, QueryCommand } from "@aws-sdk/client-dynamodb";
+import {
+  PutItemCommand,
+  QueryCommand,
+  ScanCommand,
+} from "@aws-sdk/client-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 import { s3 } from "@/lib/s3";
 import { dynamo } from "@/lib/dynamo";
@@ -39,18 +43,13 @@ export const handler: Handler = async (event) => {
     }
 
     // Check if guest already exists
-    const queryResult = await dynamo
+    const { Items: guests } = await dynamo
       .send(
-        new QueryCommand({
+        new ScanCommand({
           TableName: GUESTS_TABLE,
-          IndexName: "NameIndex", // Assuming you have a GSI on the name field
-          KeyConditionExpression: "#name = :name",
-          ExpressionAttributeNames: {
-            "#name": "name",
-          },
-          ExpressionAttributeValues: {
-            ":name": { S: guestName },
-          },
+          FilterExpression: "#name = :name",
+          ExpressionAttributeNames: { "#name": "name" },
+          ExpressionAttributeValues: { ":name": { S: guestName } },
           Limit: 1,
         })
       )
@@ -58,15 +57,15 @@ export const handler: Handler = async (event) => {
 
     // Use existing guest ID or create new one
     let guestId: string;
-    if (queryResult.Items && queryResult.Items.length > 0) {
-      guestId = queryResult.Items[0].id.S!;
+    if (guests && guests.length > 0) {
+      guestId = guests["0"].id.S!;
     } else {
       guestId = uuidv4();
     }
 
     const mediaId = uuidv4();
-    const timestamp = new Date().toISOString();
-    const s3Key = `uploads/${timestamp.split("T")[0]}/${mediaId}-${fileName}`;
+    const [timestamp] = new Date().toISOString().split("T");
+    const s3Key = `uploads/${timestamp}/${mediaId}-${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
@@ -100,7 +99,7 @@ export const handler: Handler = async (event) => {
     );
 
     // Only create a new guest record if one doesn't exist
-    if (!queryResult.Items || queryResult.Items.length === 0) {
+    if (!guests || guests.length === 0) {
       await dynamo
         .send(
           new PutItemCommand({

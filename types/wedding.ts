@@ -3,7 +3,7 @@ export interface UploadedMedia {
   type: "image" | "video";
   url: string;
   name: string;
-  uploadedAt: string;
+  uploadedAt: string | Date;
   thumbnail?: string;
   s3Key?: string;
   size?: number;

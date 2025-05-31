@@ -140,8 +140,6 @@ export default function MasonryGrid({
     }).format(date);
   };
 
-  console.log(masonryItems);
-
   return (
     <div ref={containerRef} className="w-full overflow-hidden">
       <div
